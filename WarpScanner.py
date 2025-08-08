@@ -1,52 +1,87 @@
 V=78
 import urllib.request
 import urllib.parse
-from urllib.parse import quote
 import os
-try:
-    import requests
-except Exception:
-    print("Requests module not installed. Installing now...")
-    os.system('pip install requests')
-try:
-    import requests
-except Exception:
-    os.system('wget https://github.com/psf/requests/releases/download/v2.32.2/requests-2.32.2.tar.gz')
-    os.system('tar -xzvf requests-2.32.2.tar.gz')
-    os.chdir('requests-2.32.2')
-    os.system('python setup.py install')
-try:
-    import requests
-except Exception:
-    os.system('curl -L -o requests-2.32.2.tar.gz https://github.com/psf/requests/releases/download/v2.32.2/requests-2.32.2.tar.gz')
-    os.system('tar -xzvf requests-2.32.2.tar.gz')
-    os.chdir('requests-2.32.2')
-    os.system('python setup.py install')
-    import requests
-import re
-import socket
-from concurrent.futures import ThreadPoolExecutor, as_completed
-import time
-try:
-    import rich
-except Exception:
-    print("Rich module not installed. Installing now...")
-    os.system('pip install rich')
-from rich.console import Console
-from rich.prompt import Prompt
-from rich import print as rprint
-from rich.table import Table
-try:
-    import retrying
-except Exception:
-    print("retrying module not installed. Installing now...")
-    os.system('pip install retrying')
-try:
-    import retrying
-except Exception:
-    os.system("wget https://github.com/rholder/retrying/archive/refs/tags/v1.3.3.tar.gz")
-    os.system("tar -zxvf v1.3.3.tar.gz")
-    os.chdir("retrying-1.3.3")
+import sys
+
+def _install_and_import(package):
+    import importlib
+    try:
+        return importlib.import_module(package)
+    except ImportError:
+        import subprocess
+        print(f"Installing missing package: {package}")
+        subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+        return importlib.import_module(package)
+
+Console = _install_and_import('rich.console').Console
+Table = _install_and_import('rich.table').Table
+
+def show_best_configs(results, max_display=10, save_path='/storage/emulated/0/all_configs.csv'):
+    """
+    Display the best network configurations in a rich table and save all results to a CSV file.
+    Automatically installs required dependencies if missing. Handles all errors gracefully.
+    Args:
+        results (list): List of tuples (ip, port, ping, loss_rate, jitter, score)
+        max_display (int): Maximum number of configs to display
+        save_path (str): Path to save all configs as CSV
+    """
+    console = Console()
+    try:
+        os.system('clear')
+    except Exception:
+        pass
+    if not results:
+        console.print("[bold red]No configuration found![/bold red]")
+        return
+
+    try:
+        sorted_results = sorted(results, key=lambda x: x[-1])
+    except Exception as e:
+        console.print(f"[bold red]Error sorting results: {e}[/bold red]")
+        return
+
+    table = Table(show_header=True, title="Best Configurations", header_style="bold blue")
+    table.add_column("IP", style="dim", width=17)
+    table.add_column("Port", justify="right", width=8)
+    table.add_column("Ping (ms)", justify="right", width=10)
+    table.add_column("Packet Loss (%)", justify="right", width=15)
+    table.add_column("Jitter (ms)", justify="right", width=12)
+    table.add_column("Score", justify="right", width=12)
+
+    for item in sorted_results[:max_display]:
+        try:
+            ip, port, ping, loss_rate, jitter, score = item
+            table.add_row(
+                str(ip), str(port), f"{ping:.2f}", f"{loss_rate:.2f}", f"{jitter:.2f}", f"{score:.2f}"
+            )
+        except Exception as e:
+            console.print(f"[bold red]Error adding row: {e}[/bold red]")
+
+    console.print(table)
+    best = sorted_results[0]
+    try:
+        console.print(
+            f"[bold green]Best Config:\nIP: {best[0]} | Port: {best[1]} | Ping: {best[2]:.2f} ms | Loss: {best[3]:.2f}% | Jitter: {best[4]:.2f} ms | Score: {best[5]:.2f}[/bold green]"
+        )
+    except Exception as e:
+        console.print(f"[bold red]Error displaying best config: {e}[/bold red]")
+
+    # Save all results
+    try:
+        with open(save_path, 'w') as f:
+            for r in sorted_results:
+                try:
+                    f.write(f"{r[0]},{r[1]},{r[2]:.2f},{r[3]:.2f},{r[4]:.2f},{r[5]:.2f}\n")
+                except Exception as e:
+                    console.print(f"[bold red]Error writing row: {e}[/bold red]")
+        console.print(f"[bold yellow]All results saved successfully at: {save_path}[/bold yellow]")
+    except Exception as e:
+        console.print(f"[bold red]Error saving results: {e}[/bold red]")
+
+# Example usage:
+# results = [("162.159.195.166", 908, 42.5, 0.0, 5.2, 44.86), ...]
+# show_best_configs(results)
     os.system("python setup.py install")
 from retrying import retry
 from requests.exceptions import ConnectionError
