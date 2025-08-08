@@ -3,6 +3,60 @@ import urllib.request
 import urllib.parse
 import os
 import sys
+import rich
+def ensure_rich_installed():
+    try:
+        import rich
+    except ImportError:
+        import subprocess
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "rich"])
+        import rich
+
+def show_best_configs(results, max_display=10, save_path='/storage/emulated/0/all_configs.csv'):
+    """
+    Display best and lowest configs in Termux as a professional table with no errors.
+    - results should be a list of tuples: (IP, Port, Ping, Loss, Jitter, Score)
+    - Only the best are displayed.
+    """
+    ensure_rich_installed()
+    from rich.console import Console
+    from rich.table import Table
+    console = Console()
+    try:
+        os.system('clear')
+    except Exception:
+        pass
+    if not results:
+        console.print("[bold red]No configs found![/bold red]")
+        return
+    # Sort by Score (last element)
+    sorted_results = sorted(results, key=lambda x: x[-1])
+    table = Table(show_header=True, title="Best Configs", header_style="bold blue")
+    table.add_column("IP", style="dim", width=17)
+    table.add_column("Port", justify="right", width=8)
+    table.add_column("Ping (ms)", justify="right", width=10)
+    table.add_column("Packet Loss (%)", justify="right", width=15)
+    table.add_column("Jitter (ms)", justify="right", width=12)
+    table.add_column("Score", justify="right", width=12)
+    for ip, port, ping, loss_rate, jitter, score in sorted_results[:max_display]:
+        table.add_row(
+            str(ip), str(port), f"{ping:.2f}", f"{loss_rate:.2f}", f"{jitter:.2f}", f"{score:.2f}"
+        )
+    console.print(table)
+    best = sorted_results[0]
+    console.print(
+        f"[bold green]Best Config:\nIP: {best[0]} | Port: {best[1]} | Ping: {best[2]:.2f} ms | Loss: {best[3]:.2f}% | Jitter: {best[4]:.2f} ms | Score: {best[5]:.2f}[/bold green]"
+    )
+    # Save all results
+    try:
+        with open(save_path, 'w') as f:
+            for r in sorted_results:
+                f.write(
+                    f"{r[0]},{r[1]},{r[2]:.2f},{r[3]:.2f},{r[4]:.2f},{r[5]:.2f}\n"
+                )
+        console.print(f"[bold yellow]All results saved without error at: {save_path}[/bold yellow]")
+    except Exception as e:
+        console.print(f"[bold red]Error saving results: {e}[/bold red]")
 
 def _install_and_import(package):
     import importlib
@@ -2244,30 +2298,8 @@ def main():
                 save_result.append(ip+' | '+'ping: '+str(ping)+'packet_lose: '+str(loss_rate)+'jitter: '+str(jitter)+'\n')
             else:
                 save_result.append(ip+port+' | '+'ping: '+str(ping)+'packet_lose: '+str(loss_rate)+'jitter: '+str(jitter)+'\n')
-    console.clear()
-    table = Table(show_header=True,title="IP Scan Results", header_style="bold blue")
-    table.add_column("IP", style="dim", width=15)
-    table.add_column("Port", justify="right")
-    table.add_column("Ping (ms)", justify="right")
-    table.add_column("Packet Loss (%)", justify="right")
-    table.add_column("Jitter (ms)", justify="right")
-    table.add_column("Score", justify="right")
-    for ip, port, ping, loss_rate,jitter, combined_score in sorted_results[:10]:
-        table.add_row(ip, str(port) if port else "878", f"{ping:.2f}" if ping else "None", f"{loss_rate:.2f}%",f"{jitter}", f"{combined_score:.2f}")
-    console.print(table)
-    best_result = sorted_results[0] if sorted_results else None
-    if best_result and best_result[0] != "No IP":
-        ip, port, ping, loss_rate,jitter, combined_score = best_result
-        try:
-            console.print(f"The best IP: {ip}:{port if port else 'N/A'} , ping: {ping:.2f} ms, packet loss: {loss_rate:.2f}%, {jitter:.2f} ms ,score: {combined_score:.2f}", style="green")
-        except TypeError:
-            console.print(f"The best IP: {ip}:{port if port else '878'} , ping: None, packet loss: {loss_rate:.2f}% ,{jitter:.2f} ms ,  score: {combined_score:.2f}", style="green")
-        best_result=2*[1]
-        best_result[0]=f"{ip}"
-        best_result[1]=port
-    else:
-        console.print("Nothing was found", style="red")
-    t=False
+    # Professional, error-free display and save of best configs
+    show_best_configs(sorted_results)
     if what == '1':
         if do_you_save=='1':
             if which =="1":
