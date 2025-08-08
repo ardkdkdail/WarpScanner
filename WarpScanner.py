@@ -276,73 +276,78 @@ def info():
     table.add_column("contact", justify="right")
     table.add_row("arshiacomplus","1 - Telegram")
     table.add_row("arshiacomplus","2 - github")
-    console.print(table)
-    print('\nEnter a Number\n')
-    options2={"1" : "open Telegram Channel", "2" : "open github ", "0":"Exit"}
-    for key, value in options2.items():
-        rprint(f" [bold yellow]{key}[/bold yellow]: {value}")
-    whats2 = Prompt.ask("Choose an option", choices=list(options2.keys()), default="1")
-    if whats2=='0':
-        os.execv(sys.executable, ['python'] + sys.argv)
-    elif whats2=='1':
-        os.system("termux-open-url 'https://t.me/arshia_mod_fun'")
-    elif whats2=='2'   :
-        os.system("termux-open-url 'https://github.com/arshiacomplus/'")
-def check_ipv6():
-    try:
-        ipv6 = requests.get('http://v6.ipv6-test.com/api/myip.php', timeout=15)
-        if ipv6.status_code == 200:
-            ipv6 ="[green]Available[/green]"
-    except Exception:
-        ipv6 = "Unavailable"
-    try:
-        ipv4 = requests.get('http://v4.ipv6-test.com/api/myip.php',timeout=15)
-        if ipv4.status_code == 200:
-            ipv4= "[green]Available[/green]"
-    except Exception:
-        ipv4 = "Unavailable"
-    return  [ipv4,ipv6]
-def input_p(pt ,options):
-    os.system('clear')
-    options.update({"0" : "Exit"})
-    print(pt)
-    for key, value in options.items():
-        rprint(f" [bold yellow]{key}[/bold yellow]: {value}")
-    whats = Prompt.ask("Choose an option", choices=list(options.keys()), default="1")
-    if whats=='0':
-        os.execv(sys.executable, ['python'] + sys.argv)
-    return whats
-def urlencode(string):
-    if string is None:
-        return None
-    return urllib.parse.quote(string, safe='a-zA-Z0-9.~_-')
-def free_cloudflare_account2():
-    @retry(stop_max_attempt_number=3, wait_fixed=2000, retry_on_exception=lambda x: isinstance(x, ConnectionError))
-    def file_o():
-            try:
-                response = urllib.request.urlopen("https://fscarmen.cloudflare.now.cc/wg", timeout=30).read().decode('utf-8')
-                return response
-            except Exception:
-                response = requests.get("https://fscarmen.cloudflare.now.cc/wg", timeout=30)
-                return response.text
-    response = file_o()
-    PublicKey=response[response.index(':')+2:response.index('\n')]
-    PrivateKey=response[response.index('\n')+13:]
-    reserved=[222,6,184]
-    return ["2606:4700:110:8d48:52cb:c565:3a80:c416/128" , PrivateKey , reserved, PublicKey]
-def byte_to_base64(myb):
-    return base64.b64encode(myb).decode('utf-8')
-def generate_public_key(key_bytes):
-    # Convert the private key bytes to an X25519PrivateKey object
-    private_key = X25519PrivateKey.from_private_bytes(key_bytes)
-    # Perform the scalar multiplication to get the public key
-    public_key = private_key.public_key()
-    # Serialize the public key to bytes
-    public_key_bytes = public_key.public_bytes(
-        encoding=serialization.Encoding.Raw,
-        format=serialization.PublicFormat.Raw
-    )
-    return public_key_bytes
+
+    from rich.console import Console
+    from rich.table import Table
+    import os
+
+    def show_best_configs(results, max_display=10):
+        """
+        Display the best configurations (with the lowest score) in a professional way, fully compatible with Termux.
+        - Results are sorted by score.
+        - Only the top configurations are shown.
+        - If there are no results, a suitable message is displayed.
+        - All results are saved to a CSV file automatically.
+        """
+        console = Console()
+        try:
+            os.system('clear')
+        except Exception:
+            pass  # Ignore clear errors for maximum compatibility
+
+        if not results:
+            console.print("[bold red]No configurations found![/bold red]")
+            return
+
+        # Sort results by score (lowest first)
+        sorted_results = sorted(results, key=lambda x: x[-1])
+
+        # Build a professional table with auto column sizing
+        table = Table(show_header=True, title="Best Configurations", header_style="bold blue")
+        table.add_column("IP", style="dim", width=17)
+        table.add_column("Port", justify="right", width=8)
+        table.add_column("Ping (ms)", justify="right", width=10)
+        table.add_column("Packet Loss (%)", justify="right", width=15)
+        table.add_column("Jitter (ms)", justify="right", width=12)
+        table.add_column("Score", justify="right", width=12)
+
+        # Show only the best max_display results
+        for ip, port, ping, loss_rate, jitter, score in sorted_results[:max_display]:
+            table.add_row(
+                str(ip),
+                str(port),
+                f"{ping:.2f}",
+                f"{loss_rate:.2f}",
+                f"{jitter:.2f}",
+                f"{score:.2f}"
+            )
+
+        console.print(table)
+        # Highlight the best configuration in green with a custom message
+        best = sorted_results[0]
+        console.print(
+            f"[bold green]Best Configuration:\nIP: {best[0]} | Port: {best[1]} | Ping: {best[2]:.2f} ms | Loss: {best[3]:.2f}% | Jitter: {best[4]:.2f} ms | Score: {best[5]:.2f}[/bold green]"
+        )
+
+        # Save all results to a file (automatically and error-free)
+        save_path = '/storage/emulated/0/all_configs.csv'
+        try:
+            with open(save_path, 'w') as f:
+                for r in sorted_results:
+                    f.write(
+                        f"{r[0]},{r[1]},{r[2]:.2f},{r[3]:.2f},{r[4]:.2f},{r[5]:.2f}\n"
+                    )
+            console.print(f"[bold yellow]All results saved successfully to: {save_path}[/bold yellow]")
+        except Exception as e:
+            console.print(f"[bold red]Error saving results: {e}[/bold red]")
+
+    # Example usage:
+    results = [
+        ("162.159.195.166", 908, 42.5, 0.0, 5.2, 44.86),
+        ("188.114.96.1", 878, 50.1, 0.0, 7.1, 52.43),
+        # ...
+    ]
+    show_best_configs(results)
 def generate_private_key():
     key = os.urandom(32)
     # Modify random bytes using algorithm described at:
