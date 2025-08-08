@@ -57,6 +57,7 @@ import sys
 from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
 from cryptography.hazmat.primitives import serialization
 
+
 try:
     from icmplib import ping as pinging
 except Exception:
@@ -1741,39 +1742,7 @@ def parse_configs(conifg,num=0,cv=1,hy2_path="hy2/config.yaml",is_hy2=False): # 
     data_conf=remove_nulls(config)
     data_conf=replace_accept_encoding(data_conf)
     data_conf=json.dumps(data_conf, indent=4, cls=MyEncoder)
-    show_config_qr(data_conf)
     return data_conf
-
-def show_config_qr(config_json):
-    import qrcode
-    import tempfile
-    import os
-    import sys
-    try:
-        qr = qrcode.QRCode(
-            version=1,
-            error_correction=qrcode.constants.ERROR_CORRECT_H,
-            box_size=10,
-            border=4,
-        )
-        qr.add_data(config_json)
-        qr.make(fit=True)
-        img = qr.make_image(fill_color="black", back_color="white")
-        temp_path = os.path.join(tempfile.gettempdir(), "config_qr.png")
-        img.save(temp_path)
-        print(f"QR code for config saved at: {temp_path}")
-        try:
-            import subprocess
-            if sys.platform.startswith("linux"):
-                subprocess.run(["xdg-open", temp_path])
-            elif sys.platform == "darwin":
-                subprocess.run(["open", temp_path])
-            elif sys.platform == "win32":
-                os.startfile(temp_path)
-        except Exception as e:
-            print(f"Could not open QR image automatically: {e}")
-    except Exception as e:
-        print(f"QR code generation error: {e}")
 def goCheckWithConfig(sorted_results, config="wireguard://kHHb2AkFjro8jdZR46KhzqeOcWsv15Idhw3dPOW35mg%3D@162.159.195.204:908?wnoise=quic&presharedkey=&address=172.16.0.2%2F32%2C2606%3A4700%3A110%3A846c%3Ae510%3Abfa1%3Aea9f%3A5247%2F128&reserved=176%2C33%2C210&keepalive=5&wpayloadsize=1-8&publickey=bmXOC%2BF1FxEMF9dyiK2H5%2F1SUtzH0JuVo51h2wPfgyo%3D&wnoisedelay=1-3&wnoisecount=15&mtu=1330#Tel%3D+%40arshiacomplus+wire"):
     print("igo")
     oklist = []
