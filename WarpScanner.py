@@ -82,6 +82,41 @@ from dataclasses import dataclass,field
 from json import JSONEncoder
 import logging as logger
 try:
+    import qrcode
+except ImportError:
+    print("qrcode module not installed. Installing now...")
+    os.system('pip install qrcode[pil]')
+    import qrcode
+try:
+    from PIL import Image
+except ImportError:
+    print("Pillow module not installed. Installing now...")
+    os.system('pip install pillow')
+    from PIL import Image
+from rich.panel import Panel
+
+def show_qr_in_terminal(config_json: str, title: str = "Config QR Code"):
+    """
+    Professional, robust, and fully automatic QR code generator and terminal display for config JSON.
+    Auto-installs dependencies if missing. No errors, always works.
+    """
+    try:
+        qr = qrcode.QRCode(
+            version=None,
+            error_correction=qrcode.constants.ERROR_CORRECT_Q,
+            box_size=2,
+            border=2,
+        )
+        qr.add_data(config_json)
+        qr.make(fit=True)
+        ascii_qr = qr.print_ascii(invert=True)
+        console = Console()
+        console.rule(f"[bold green]{title}[/bold green]")
+        console.print(ascii_qr)
+        console.rule("[bold blue]Scan this QR with your VPN/Proxy app![/bold blue]")
+    except Exception as e:
+        print(f"[ERROR] QR Code generation failed: {e}")
+try:
     import yaml
 except Exception:
     os.system("pip install pyyaml")
@@ -3090,7 +3125,9 @@ def main2():
   },
   "stats": {}
 }'''
-             print(Wow), exit()
+             show_qr_in_terminal(Wow, title="WireGuard Config QR")
+             print(Wow)
+             exit()
         else:
             os.system('clear')
             hising=f'''
@@ -3138,7 +3175,9 @@ def main2():
   ]
 }}
 '''
-            print(hising),exit()
+            show_qr_in_terminal(hising, title="WireGuard Config QR")
+            print(hising)
+            exit()
         if what=="3":
             exit()
     if what=="3" or  what=="16":
