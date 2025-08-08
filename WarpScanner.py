@@ -54,6 +54,9 @@ import random
 import subprocess
 import json
 import sys
+from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
+from cryptography.hazmat.primitives import serialization
+
 try:
     from icmplib import ping as pinging
 except Exception:
