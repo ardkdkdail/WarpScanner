@@ -1,141 +1,52 @@
 V=78
 import urllib.request
 import urllib.parse
+from urllib.parse import quote
 import os
-import sys
-import rich
-def ensure_rich_installed():
-    try:
-        import rich
-    except ImportError:
-        import subprocess
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "rich"])
-        import rich
-
-def show_best_configs(results, max_display=10, save_path='/storage/emulated/0/all_configs.csv'):
-    """
-    Display best and lowest configs in Termux as a professional table with no errors.
-    - results should be a list of tuples: (IP, Port, Ping, Loss, Jitter, Score)
-    - Only the best are displayed.
-    """
-    ensure_rich_installed()
-    from rich.console import Console
-    from rich.table import Table
-    console = Console()
-    try:
-        os.system('clear')
-    except Exception:
-        pass
-    if not results:
-        console.print("[bold red]No configs found![/bold red]")
-        return
-    # Sort by Score (last element)
-    sorted_results = sorted(results, key=lambda x: x[-1])
-    table = Table(show_header=True, title="Best Configs", header_style="bold blue")
-    table.add_column("IP", style="dim", width=17)
-    table.add_column("Port", justify="right", width=8)
-    table.add_column("Ping (ms)", justify="right", width=10)
-    table.add_column("Packet Loss (%)", justify="right", width=15)
-    table.add_column("Jitter (ms)", justify="right", width=12)
-    table.add_column("Score", justify="right", width=12)
-    for ip, port, ping, loss_rate, jitter, score in sorted_results[:max_display]:
-        table.add_row(
-            str(ip), str(port), f"{ping:.2f}", f"{loss_rate:.2f}", f"{jitter:.2f}", f"{score:.2f}"
-        )
-    console.print(table)
-    best = sorted_results[0]
-    console.print(
-        f"[bold green]Best Config:\nIP: {best[0]} | Port: {best[1]} | Ping: {best[2]:.2f} ms | Loss: {best[3]:.2f}% | Jitter: {best[4]:.2f} ms | Score: {best[5]:.2f}[/bold green]"
-    )
-    # Save all results
-    try:
-        with open(save_path, 'w') as f:
-            for r in sorted_results:
-                f.write(
-                    f"{r[0]},{r[1]},{r[2]:.2f},{r[3]:.2f},{r[4]:.2f},{r[5]:.2f}\n"
-                )
-        console.print(f"[bold yellow]All results saved without error at: {save_path}[/bold yellow]")
-    except Exception as e:
-        console.print(f"[bold red]Error saving results: {e}[/bold red]")
-
-def _install_and_import(package):
-    import importlib
-    try:
-        return importlib.import_module(package)
-    except ImportError:
-        import subprocess
-        print(f"Installing missing package: {package}")
-        subprocess.check_call([sys.executable, "-m", "pip", "install", package])
-        return importlib.import_module(package)
-
-Console = _install_and_import('rich.console').Console
-Table = _install_and_import('rich.table').Table
-
-def show_best_configs(results, max_display=10, save_path='/storage/emulated/0/all_configs.csv'):
-    """
-    Display the best network configurations in a rich table and save all results to a CSV file.
-    Automatically installs required dependencies if missing. Handles all errors gracefully.
-    Args:
-        results (list): List of tuples (ip, port, ping, loss_rate, jitter, score)
-        max_display (int): Maximum number of configs to display
-        save_path (str): Path to save all configs as CSV
-    """
-    console = Console()
-    try:
-        os.system('clear')
-    except Exception:
-        pass
-    if not results:
-        console.print("[bold red]No configuration found![/bold red]")
-        return
-
-    try:
-        sorted_results = sorted(results, key=lambda x: x[-1])
-    except Exception as e:
-        console.print(f"[bold red]Error sorting results: {e}[/bold red]")
-        return
-
-    table = Table(show_header=True, title="Best Configurations", header_style="bold blue")
-    table.add_column("IP", style="dim", width=17)
-    table.add_column("Port", justify="right", width=8)
-    table.add_column("Ping (ms)", justify="right", width=10)
-    table.add_column("Packet Loss (%)", justify="right", width=15)
-    table.add_column("Jitter (ms)", justify="right", width=12)
-    table.add_column("Score", justify="right", width=12)
-
-    for item in sorted_results[:max_display]:
-        try:
-            ip, port, ping, loss_rate, jitter, score = item
-            table.add_row(
-                str(ip), str(port), f"{ping:.2f}", f"{loss_rate:.2f}", f"{jitter:.2f}", f"{score:.2f}"
-            )
-        except Exception as e:
-            console.print(f"[bold red]Error adding row: {e}[/bold red]")
-
-    console.print(table)
-    best = sorted_results[0]
-    try:
-        console.print(
-            f"[bold green]Best Config:\nIP: {best[0]} | Port: {best[1]} | Ping: {best[2]:.2f} ms | Loss: {best[3]:.2f}% | Jitter: {best[4]:.2f} ms | Score: {best[5]:.2f}[/bold green]"
-        )
-    except Exception as e:
-        console.print(f"[bold red]Error displaying best config: {e}[/bold red]")
-
-    # Save all results
-    try:
-        with open(save_path, 'w') as f:
-            for r in sorted_results:
-                try:
-                    f.write(f"{r[0]},{r[1]},{r[2]:.2f},{r[3]:.2f},{r[4]:.2f},{r[5]:.2f}\n")
-                except Exception as e:
-                    console.print(f"[bold red]Error writing row: {e}[/bold red]")
-        console.print(f"[bold yellow]All results saved successfully at: {save_path}[/bold yellow]")
-    except Exception as e:
-        console.print(f"[bold red]Error saving results: {e}[/bold red]")
-
-# Example usage:
-# results = [("162.159.195.166", 908, 42.5, 0.0, 5.2, 44.86), ...]
-# show_best_configs(results)
+try:
+    import requests
+except Exception:
+    print("Requests module not installed. Installing now...")
+    os.system('pip install requests')
+try:
+    import requests
+except Exception:
+    os.system('wget https://github.com/psf/requests/releases/download/v2.32.2/requests-2.32.2.tar.gz')
+    os.system('tar -xzvf requests-2.32.2.tar.gz')
+    os.chdir('requests-2.32.2')
+    os.system('python setup.py install')
+try:
+    import requests
+except Exception:
+    os.system('curl -L -o requests-2.32.2.tar.gz https://github.com/psf/requests/releases/download/v2.32.2/requests-2.32.2.tar.gz')
+    os.system('tar -xzvf requests-2.32.2.tar.gz')
+    os.chdir('requests-2.32.2')
+    os.system('python setup.py install')
+    import requests
+import re
+import socket
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import time
+try:
+    import rich
+except Exception:
+    print("Rich module not installed. Installing now...")
+    os.system('pip install rich')
+from rich.console import Console
+from rich.prompt import Prompt
+from rich import print as rprint
+from rich.table import Table
+try:
+    import retrying
+except Exception:
+    print("retrying module not installed. Installing now...")
+    os.system('pip install retrying')
+try:
+    import retrying
+except Exception:
+    os.system("wget https://github.com/rholder/retrying/archive/refs/tags/v1.3.3.tar.gz")
+    os.system("tar -zxvf v1.3.3.tar.gz")
+    os.chdir("retrying-1.3.3")
     os.system("python setup.py install")
 from retrying import retry
 from requests.exceptions import ConnectionError
@@ -145,7 +56,6 @@ import json
 import sys
 from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
 from cryptography.hazmat.primitives import serialization
-
 
 try:
     from icmplib import ping as pinging
@@ -171,45 +81,8 @@ from dataclasses import dataclass,field
 from json import JSONEncoder
 import logging as logger
 try:
-    import qrcode
-except ImportError:
-    print("qrcode module not installed. Installing now...")
-    os.system('pip install qrcode[pil]')
-    import qrcode
-try:
-    from PIL import Image
-except ImportError:
-    print("Pillow module not installed. Installing now...")
-    os.system('pip install pillow')
-    from PIL import Image
-from rich.panel import Panel
-
-def show_qr_in_terminal(config_json: str, title: str = "Config QR Code"):
-    """
-    The most professional, robust, and fully automatic QR code generator and terminal display for WireGuard config JSONs.
-    Auto-installs all dependencies if missing. No errors, always works, for any config. Smart, self-contained, and reliable.
-    """
-    """
-    Professional, robust, and error-free QR code display for Termux using qrcode and rich.
-    Always works, no errors, fully automated.
-    """
-    import qrcode
-    from rich.console import Console
-    console = Console()
-    qr = qrcode.QRCode(border=1)
-    qr.add_data(config_json)
-    qr.make(fit=True)
-    matrix = qr.get_matrix()
-    console.rule(f"[bold green]{title}[/bold green]")
-    for row in matrix:
-        # Use double space for white, double block for black for best Termux compatibility
-        line = ''.join(['  ' if cell else '██' for cell in row])
-        console.print(line, style="white on black")
-    console.rule("[bold blue]Scan this QR with your VPN/Proxy app![/bold blue]")
-try:
     import yaml
-except Exception:pkg install libjpeg-turbo
-pkg install clang python python-dev
+except Exception:
     os.system("pip install pyyaml")
 try:
     import psutil
@@ -365,78 +238,73 @@ def info():
     table.add_column("contact", justify="right")
     table.add_row("arshiacomplus","1 - Telegram")
     table.add_row("arshiacomplus","2 - github")
-
-    from rich.console import Console
-    from rich.table import Table
-    import os
-
-    def show_best_configs(results, max_display=10):
-        """
-        Display the best configurations (with the lowest score) in a professional way, fully compatible with Termux.
-        - Results are sorted by score.
-        - Only the top configurations are shown.
-        - If there are no results, a suitable message is displayed.
-        - All results are saved to a CSV file automatically.
-        """
-        console = Console()
-        try:
-            os.system('clear')
-        except Exception:
-            pass  # Ignore clear errors for maximum compatibility
-
-        if not results:
-            console.print("[bold red]No configurations found![/bold red]")
-            return
-
-        # Sort results by score (lowest first)
-        sorted_results = sorted(results, key=lambda x: x[-1])
-
-        # Build a professional table with auto column sizing
-        table = Table(show_header=True, title="Best Configurations", header_style="bold blue")
-        table.add_column("IP", style="dim", width=17)
-        table.add_column("Port", justify="right", width=8)
-        table.add_column("Ping (ms)", justify="right", width=10)
-        table.add_column("Packet Loss (%)", justify="right", width=15)
-        table.add_column("Jitter (ms)", justify="right", width=12)
-        table.add_column("Score", justify="right", width=12)
-
-        # Show only the best max_display results
-        for ip, port, ping, loss_rate, jitter, score in sorted_results[:max_display]:
-            table.add_row(
-                str(ip),
-                str(port),
-                f"{ping:.2f}",
-                f"{loss_rate:.2f}",
-                f"{jitter:.2f}",
-                f"{score:.2f}"
-            )
-
-        console.print(table)
-        # Highlight the best configuration in green with a custom message
-        best = sorted_results[0]
-        console.print(
-            f"[bold green]Best Configuration:\nIP: {best[0]} | Port: {best[1]} | Ping: {best[2]:.2f} ms | Loss: {best[3]:.2f}% | Jitter: {best[4]:.2f} ms | Score: {best[5]:.2f}[/bold green]"
-        )
-
-        # Save all results to a file (automatically and error-free)
-        save_path = '/storage/emulated/0/all_configs.csv'
-        try:
-            with open(save_path, 'w') as f:
-                for r in sorted_results:
-                    f.write(
-                        f"{r[0]},{r[1]},{r[2]:.2f},{r[3]:.2f},{r[4]:.2f},{r[5]:.2f}\n"
-                    )
-            console.print(f"[bold yellow]All results saved successfully to: {save_path}[/bold yellow]")
-        except Exception as e:
-            console.print(f"[bold red]Error saving results: {e}[/bold red]")
-
-    # Example usage:
-    results = [
-        ("162.159.195.166", 908, 42.5, 0.0, 5.2, 44.86),
-        ("188.114.96.1", 878, 50.1, 0.0, 7.1, 52.43),
-        # ...
-    ]
-    show_best_configs(results)
+    console.print(table)
+    print('\nEnter a Number\n')
+    options2={"1" : "open Telegram Channel", "2" : "open github ", "0":"Exit"}
+    for key, value in options2.items():
+        rprint(f" [bold yellow]{key}[/bold yellow]: {value}")
+    whats2 = Prompt.ask("Choose an option", choices=list(options2.keys()), default="1")
+    if whats2=='0':
+        os.execv(sys.executable, ['python'] + sys.argv)
+    elif whats2=='1':
+        os.system("termux-open-url 'https://t.me/arshia_mod_fun'")
+    elif whats2=='2'   :
+        os.system("termux-open-url 'https://github.com/arshiacomplus/'")
+def check_ipv6():
+    try:
+        ipv6 = requests.get('http://v6.ipv6-test.com/api/myip.php', timeout=15)
+        if ipv6.status_code == 200:
+            ipv6 ="[green]Available[/green]"
+    except Exception:
+        ipv6 = "Unavailable"
+    try:
+        ipv4 = requests.get('http://v4.ipv6-test.com/api/myip.php',timeout=15)
+        if ipv4.status_code == 200:
+            ipv4= "[green]Available[/green]"
+    except Exception:
+        ipv4 = "Unavailable"
+    return  [ipv4,ipv6]
+def input_p(pt ,options):
+    os.system('clear')
+    options.update({"0" : "Exit"})
+    print(pt)
+    for key, value in options.items():
+        rprint(f" [bold yellow]{key}[/bold yellow]: {value}")
+    whats = Prompt.ask("Choose an option", choices=list(options.keys()), default="1")
+    if whats=='0':
+        os.execv(sys.executable, ['python'] + sys.argv)
+    return whats
+def urlencode(string):
+    if string is None:
+        return None
+    return urllib.parse.quote(string, safe='a-zA-Z0-9.~_-')
+def free_cloudflare_account2():
+    @retry(stop_max_attempt_number=3, wait_fixed=2000, retry_on_exception=lambda x: isinstance(x, ConnectionError))
+    def file_o():
+            try:
+                response = urllib.request.urlopen("https://fscarmen.cloudflare.now.cc/wg", timeout=30).read().decode('utf-8')
+                return response
+            except Exception:
+                response = requests.get("https://fscarmen.cloudflare.now.cc/wg", timeout=30)
+                return response.text
+    response = file_o()
+    PublicKey=response[response.index(':')+2:response.index('\n')]
+    PrivateKey=response[response.index('\n')+13:]
+    reserved=[222,6,184]
+    return ["2606:4700:110:8d48:52cb:c565:3a80:c416/128" , PrivateKey , reserved, PublicKey]
+def byte_to_base64(myb):
+    return base64.b64encode(myb).decode('utf-8')
+def generate_public_key(key_bytes):
+    # Convert the private key bytes to an X25519PrivateKey object
+    private_key = X25519PrivateKey.from_private_bytes(key_bytes)
+    # Perform the scalar multiplication to get the public key
+    public_key = private_key.public_key()
+    # Serialize the public key to bytes
+    public_key_bytes = public_key.public_bytes(
+        encoding=serialization.Encoding.Raw,
+        format=serialization.PublicFormat.Raw
+    )
+    return public_key_bytes
 def generate_private_key():
     key = os.urandom(32)
     # Modify random bytes using algorithm described at:
@@ -2298,8 +2166,30 @@ def main():
                 save_result.append(ip+' | '+'ping: '+str(ping)+'packet_lose: '+str(loss_rate)+'jitter: '+str(jitter)+'\n')
             else:
                 save_result.append(ip+port+' | '+'ping: '+str(ping)+'packet_lose: '+str(loss_rate)+'jitter: '+str(jitter)+'\n')
-    # Professional, error-free display and save of best configs
-    show_best_configs(sorted_results)
+    console.clear()
+    table = Table(show_header=True,title="IP Scan Results", header_style="bold blue")
+    table.add_column("IP", style="dim", width=15)
+    table.add_column("Port", justify="right")
+    table.add_column("Ping (ms)", justify="right")
+    table.add_column("Packet Loss (%)", justify="right")
+    table.add_column("Jitter (ms)", justify="right")
+    table.add_column("Score", justify="right")
+    for ip, port, ping, loss_rate,jitter, combined_score in sorted_results[:10]:
+        table.add_row(ip, str(port) if port else "878", f"{ping:.2f}" if ping else "None", f"{loss_rate:.2f}%",f"{jitter}", f"{combined_score:.2f}")
+    console.print(table)
+    best_result = sorted_results[0] if sorted_results else None
+    if best_result and best_result[0] != "No IP":
+        ip, port, ping, loss_rate,jitter, combined_score = best_result
+        try:
+            console.print(f"The best IP: {ip}:{port if port else 'N/A'} , ping: {ping:.2f} ms, packet loss: {loss_rate:.2f}%, {jitter:.2f} ms ,score: {combined_score:.2f}", style="green")
+        except TypeError:
+            console.print(f"The best IP: {ip}:{port if port else '878'} , ping: None, packet loss: {loss_rate:.2f}% ,{jitter:.2f} ms ,  score: {combined_score:.2f}", style="green")
+        best_result=2*[1]
+        best_result[0]=f"{ip}"
+        best_result[1]=port
+    else:
+        console.print("Nothing was found", style="red")
+    t=False
     if what == '1':
         if do_you_save=='1':
             if which =="1":
@@ -3199,9 +3089,7 @@ def main2():
   },
   "stats": {}
 }'''
-             show_qr_in_terminal(Wow, title="WireGuard Config QR")
-             print(Wow)
-             exit()
+             print(Wow), exit()
         else:
             os.system('clear')
             hising=f'''
@@ -3249,9 +3137,7 @@ def main2():
   ]
 }}
 '''
-            show_qr_in_terminal(hising, title="WireGuard Config QR")
-            print(hising)
-            exit()
+            print(hising),exit()
         if what=="3":
             exit()
     if what=="3" or  what=="16":
